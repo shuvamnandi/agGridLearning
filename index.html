@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <script src="https://unpkg.com/ag-grid-community/dist/ag-grid-community.min.noStyle.js"></script>
+  <link rel="stylesheet" href="https://unpkg.com/ag-grid-community/dist/styles/ag-grid.css">
+  <link rel="stylesheet" href="https://unpkg.com/ag-grid-community/dist/styles/ag-theme-balham.css">
+  <link rel="stylesheet" href="https://unpkg.com/ag-grid-community/dist/styles/ag-theme-balham-dark.css">
+  <meta charset="utf-8">
+  <title>AG Grid</title>
+  <style>
+    h1 {
+      color: teal;
+      font-size: 36px;
+      text-align: center;
+      border: 1px solid blue;
+      margin-left: 20px;
+      margin-right: 20px;
+    }
+
+    .ag-theme-balham-dark div {
+        font-family: 'Helvetica'; 
+    }
+
+    .ag-header-cell-label .ag-header-cell-text{
+      overflow-wrap: break-word;
+      white-space: normal !important;
+    }
+
+    .button-style {
+        color: red; 
+        background: silver;
+        width: 16.67%;
+    }
+  </style>
+</head>
+
+<body>
+  <h1>AG Grid Learning</h1>
+  <button id="button-show-hide-input-columns" onclick="toggleUserInputColumnsVisibility(this)" class="button-style">Hide User Input Columns</button>
+  <button id="button-fit-to-screen" onclick="resizeGridFitToScreen(this)" class="button-style">Fit Data to Screen</button>
+  <button id="button-fit-columns-to-data" onclick="resizeGridFitDataToColumns(this)" class="button-style">Fit Data to Columns</button>
+  <div id="myAgGrid" class="ag-theme-balham-dark"></div>
+  <script type="text/javascript" charset="utf-8">
+
+    // specify the columns
+    var columnDefs = [
+      {headerName: "CMU Level 2", field: "cmuLevel2", minWidth: 115, maxWidth: 225, pinned: "left"},
+      {headerName: "DCC CMU Account", field: "dccCMUAccount", width: 150, minWidth: 135, maxWidth: 225, pinned: "left"},
+      {headerName: "Currency", field: "ccy", width: 95, resizable: false, minWidth: 65, maxWidth: 100, pinned: "left"},
+      {headerName: "Settlement Date", field: "settlementDate", width: 135, minWidth: 100, maxWidth: 140, pinned: "left"},
+      {headerName: "FX System Amt.", field: "fxSystem", width: 135, minWidth: 100, maxWidth: 160},
+      {headerName: "FX User Input", field: "fxUserInput", editable: true, width: 120, minWidth: 100, maxWidth: 160},
+      {headerName: "FX Total Amt.", field: "fxTotal", width: 120, minWidth: 100, maxWidth: 160},
+      {headerName: "Bond System Amt.", field: "bondSystem", width: 150, minWidth: 100, maxWidth: 160},
+      {headerName: "Bond User Input", field: "bondUserInput", editable: true, width: 135, minWidth: 100, maxWidth: 160},
+      {headerName: "Bond Total Amt.", field: "bondTotal", width: 135, minWidth: 100, maxWidth: 160},
+      {headerName: "FX Rev. Cum.", field: "fxRevCum", width: 120, minWidth: 100, maxWidth: 160},
+      {headerName: "Bond Rev. Cum.", field: "bondRevCum", width: 135, minWidth: 100, maxWidth: 160},
+      {headerName: "FX 90 % Nett.", field: "ninetyPercentFXNett", width: 130, minWidth: 100, maxWidth: 160, pinned: "right"},
+      {headerName: "Nett.", field: "nett", width: 130, minWidth: 100, maxWidth: 160, pinned: "right"},
+    ];
+    
+    // specify the data
+    var rowData = [
+      {cmuLevel2: "Australia and New Zealand Bank", dccCMUAccount: "CMUHK001ANZ", ccy: "CNY", settlementDate: "19 Feb 2019", fxSystem: 0, fxUserInput: 0, fxTotal: 350000000, bondSystem: 350000000, bondUserInput: 350000000, bondTotal: 350000000, fxRevCum: 350000000, bondRevCum: 350000000, ninetyPercentFXNett: 0, nett: 0},
+      {cmuLevel2: "Australia and New Zealand Bank", dccCMUAccount: "CMUHK001ANZ", ccy: "CNY", settlementDate: "28 Jun 2020", fxSystem: 35000, fxUserInput: 0, fxTotal: 350000000, bondSystem: 350000000, bondUserInput: 350000000, bondTotal: 350000000, fxRevCum: 350000000, bondRevCum: 350000000, ninetyPercentFXNett: 0, nett: 0},
+      {cmuLevel2: "Tata", dccCMUAccount: "CMUHK002AKB", ccy: "CNY", settlementDate: "03 Mar 2019", fxSystem: 350000000, fxUserInput: 0, fxTotal: 350000000, bondSystem: 350000000, bondUserInput: 350000000, bondTotal: 350000000, fxRevCum: 350000000, bondRevCum: 350000000, ninetyPercentFXNett: 0, nett: 0},
+      {cmuLevel2: "Citibank", dccCMUAccount: "CMUHK003HGL", ccy: "CNY", settlementDate: "04 Aug 2019", fxSystem: 5309000, bondSystem: 500000000, fxUserInput: 0, fxTotal: 350000000, bondSystem: 350000000, bondUserInput: 350000000, bondTotal: 350000000, fxRevCum: 350000000, bondRevCum: 350000000, ninetyPercentFXNett: 0, nett: 0},
+      {cmuLevel2: "Citibank", dccCMUAccount: "CMUHK004CHK", ccy: "CNY", settlementDate: "18 Dec 2021", fxSystem: 35000, bondSystem: 0, fxUserInput: 0, fxTotal: 350000000, bondSystem: 350000000, bondUserInput: 350000000, bondTotal: 350000000, fxRevCum: 350000000, bondRevCum: 350000000, ninetyPercentFXNett: 0, nett: 0},
+    ];
+    
+    // let the grid know which columns and what data to use
+    var gridOptions = {
+      columnDefs: columnDefs,
+      rowData: rowData,
+      defaultColDef: {
+        resizable: true,
+        suppressMovable: true,
+      }
+    
+    };
+
+  // lookup the container we want the Grid to use
+  var eGridDiv = document.querySelector('#myAgGrid');
+
+  // create the grid passing in the div to use together with the columns & data we want to use
+  new agGrid.Grid(eGridDiv, gridOptions);
+
+  var toggleUserInputColumnsVisibility = function(target) {
+    console.log("toggleUserInputColumnsVisibility clicked");
+    if (target.userInputColumnsVisibleState) {
+      target.textContent = "Hide User Input Columns";
+    }
+    else {
+      target.textContent = "Show User Input Columns";
+    }
+    gridOptions.columnApi.setColumnVisible("fxUserInput", target.userInputColumnsVisibleState);
+    gridOptions.columnApi.setColumnVisible("bondUserInput", target.userInputColumnsVisibleState);
+    target.userInputColumnsVisibleState = !target.userInputColumnsVisibleState;
+  }
+
+  var setIdText = function(id, value) {
+    document.getElementById(id).innerHTML = value == null ? 'null' : value;
+  }
+
+  var resizeGridFitToScreen = function(target) {
+    console.log("resizeGridFitToScreen clicked");
+    gridOptions.api.sizeColumnsToFit();
+    gridOptions.api.setHeaderHeight(60);
+    //setIdText('headerHeight', 60);
+  }
+
+  var resizeGridFitDataToColumns = function(target) {
+    console.log("resizeGridFitDataToColumns clicked");
+    var allColumnIds = [];
+    gridOptions.columnApi.getAllColumns().forEach(function(column) {
+        allColumnIds.push(column.colId);
+    });
+    gridOptions.columnApi.autoSizeColumns(allColumnIds);
+    gridOptions.api.setHeaderHeight(null);
+    //setIdText('headerHeight', null);
+  }
+
+  </script>
+</body>
+</html>
