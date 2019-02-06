@@ -1,7 +1,8 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <script src="https://unpkg.com/ag-grid-community/dist/ag-grid-community.min.noStyle.js"></script>
+  <script src="https://unpkg.com/ag-grid-community/dist/ag-grid-community.js"></script>
+  <script src="https://unpkg.com/ag-grid-enterprise/dist/ag-grid-enterprise.js"></script>
   <link rel="stylesheet" href="https://unpkg.com/ag-grid-community/dist/styles/ag-grid.css">
   <link rel="stylesheet" href="https://unpkg.com/ag-grid-community/dist/styles/ag-theme-balham.css">
   <link rel="stylesheet" href="https://unpkg.com/ag-grid-community/dist/styles/ag-theme-balham-dark.css">
@@ -39,15 +40,16 @@
   <button id="button-show-hide-input-columns" onclick="toggleUserInputColumnsVisibility(this)" class="button-style">Hide User Input Columns</button>
   <button id="button-fit-to-screen" onclick="resizeGridFitToScreen(this)" class="button-style">Fit Data to Screen</button>
   <button id="button-fit-columns-to-data" onclick="resizeGridFitDataToColumns(this)" class="button-style">Fit Data to Columns</button>
+  <button id="button-pin-columns" onclick="togglePinUnpinColumns(this)" class="button-style">Pin Columns</button>
   <div id="myAgGrid" class="ag-theme-balham-dark"></div>
   <script type="text/javascript" charset="utf-8">
 
     // specify the columns
     var columnDefs = [
-      {headerName: "CMU Level 2", field: "cmuLevel2", minWidth: 115, maxWidth: 225, pinned: "left"},
-      {headerName: "DCC CMU Account", field: "dccCMUAccount", width: 150, minWidth: 135, maxWidth: 225, pinned: "left"},
-      {headerName: "Currency", field: "ccy", width: 95, resizable: false, minWidth: 65, maxWidth: 100, pinned: "left"},
-      {headerName: "Settlement Date", field: "settlementDate", width: 135, minWidth: 100, maxWidth: 140, pinned: "left"},
+      {headerName: "CMU Level 2", field: "cmuLevel2", width: 120, minWidth: 115, maxWidth: 225, rowGroup: true, hide: true },
+      {headerName: "DCC CMU Account", field: "dccCMUAccount", width: 150, minWidth: 135, maxWidth: 225, rowGroup: true, hide: true },
+      {headerName: "Currency", field: "ccy", width: 95, resizable: false, minWidth: 65, maxWidth: 100, rowGroup: true, hide: true },
+      {headerName: "Settlement Date", field: "settlementDate", width: 135, minWidth: 100, maxWidth: 140},
       {headerName: "FX System Amt.", field: "fxSystem", width: 135, minWidth: 100, maxWidth: 160},
       {headerName: "FX User Input", field: "fxUserInput", editable: true, width: 120, minWidth: 100, maxWidth: 160},
       {headerName: "FX Total Amt.", field: "fxTotal", width: 120, minWidth: 100, maxWidth: 160},
@@ -56,8 +58,8 @@
       {headerName: "Bond Total Amt.", field: "bondTotal", width: 135, minWidth: 100, maxWidth: 160},
       {headerName: "FX Rev. Cum.", field: "fxRevCum", width: 120, minWidth: 100, maxWidth: 160},
       {headerName: "Bond Rev. Cum.", field: "bondRevCum", width: 135, minWidth: 100, maxWidth: 160},
-      {headerName: "FX 90 % Nett.", field: "ninetyPercentFXNett", width: 130, minWidth: 100, maxWidth: 160, pinned: "right"},
-      {headerName: "Nett.", field: "nett", width: 130, minWidth: 100, maxWidth: 160, pinned: "right"},
+      {headerName: "FX 90 % Nett.", field: "ninetyPercentFXNett", width: 130, minWidth: 100, maxWidth: 160},
+      {headerName: "Nett.", field: "nett", width: 130, minWidth: 100, maxWidth: 160},
     ];
     
     // specify the data
@@ -69,6 +71,12 @@
       {cmuLevel2: "OCBC SG", dccCMUAccount: "LSQ941US04", ccy: "XYZ", settlementDate: "18 Dec 2021", fxSystem: 35000, bondSystem: 0, fxUserInput: 0, fxTotal: 350000000, bondSystem: 350000000, bondUserInput: 350000000, bondTotal: 350000000, fxRevCum: 350000000, bondRevCum: 350000000, ninetyPercentFXNett: 0, nett: 0},
     ];
     
+    var gridReadyCallback = function(params) {
+      console.log("Grid is ready, so calling gridReadyCallback");
+      console.log(params);
+      pinColumnsOnLeft(this);
+    }
+  
     // let the grid know which columns and what data to use
     var gridOptions = {
       columnDefs: columnDefs,
@@ -76,7 +84,10 @@
       defaultColDef: {
         resizable: true,
         suppressMovable: true,
-      }
+      },
+      onGridReady: gridReadyCallback,
+      groupMultiAutoColumn: true,
+      groupDefaultExpanded: 3,
     
     };
 
@@ -85,6 +96,7 @@
 
   // create the grid passing in the div to use together with the columns & data we want to use
   new agGrid.Grid(eGridDiv, gridOptions);
+
 
   var toggleUserInputColumnsVisibility = function(target) {
     console.log("toggleUserInputColumnsVisibility clicked");
@@ -113,12 +125,34 @@
   var resizeGridFitDataToColumns = function(target) {
     console.log("resizeGridFitDataToColumns clicked");
     var allColumnIds = [];
-    gridOptions.columnApi.getAllColumns().forEach(function(column) {
+    gridOptions.columnApi.getAllGridColumns().forEach(function(column) {
+        console.log(column);
         allColumnIds.push(column.colId);
     });
     gridOptions.columnApi.autoSizeColumns(allColumnIds);
     gridOptions.api.setHeaderHeight(null);
     //setIdText('headerHeight', null);
+  }
+
+  var togglePinUnpinColumns = function(target) {
+    console.log("togglePinUnpinColumns clicked");
+    var pinnedLeftColumnKeys = ["cmuLevel2", "dccCMUAccount", "ccy"];
+    var pinnedLeftColumnDefs = ["settlementDate"];
+    pinnedLeftColumnKeys.forEach(function(key){
+      pinnedLeftColumnDefs.push("ag-Grid-AutoColumn-"+key);
+    });
+    var pinnedRightColumnDefs = ["ninetyPercentFXNett", "nett"];
+    if (target.pinnedState) {
+      target.textContent = "Pin Columns";
+      gridOptions.columnApi.setColumnsPinned(pinnedLeftColumnDefs, null);
+      gridOptions.columnApi.setColumnsPinned(pinnedRightColumnDefs, null);
+    }
+    else {
+      target.textContent = "Unpin Columns";
+      gridOptions.columnApi.setColumnsPinned(pinnedLeftColumnDefs, "left");
+      gridOptions.columnApi.setColumnsPinned(pinnedRightColumnDefs, "right");
+    }
+    target.pinnedState = !target.pinnedState;
   }
 
   </script>
